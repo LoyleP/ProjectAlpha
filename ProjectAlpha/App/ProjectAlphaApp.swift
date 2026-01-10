@@ -1,13 +1,13 @@
 import SwiftUI
-import SwiftData
 
 @main
 struct ProjectAlphaApp: App {
+    let persistenceController = PersistenceController.shared
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
-        // This line tells the app to set up storage for our MoodEntry model
-        .modelContainer(for: MoodEntry.self)
     }
 }

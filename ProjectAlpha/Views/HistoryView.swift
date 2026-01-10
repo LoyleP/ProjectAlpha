@@ -38,11 +38,11 @@ struct HistoryView: View {
                                 Text(formatHeaderDate(date))
                                     .font(.system(size: DesignSystem.Typography.tiny, weight: .bold))
                                     .foregroundStyle(MidnightTheme.secondaryText).padding(.leading, 4)
+                                
                                 ForEach(dayEntries) { entry in
-                                    if let mood = Mood(rawValue: entry.moodName) {
-                                        HistoryRow(mood: mood, date: entry.timestamp) {
-                                            withAnimation { modelContext.delete(entry) }
-                                        }
+                                    // Pass the full entry to display energy and notes
+                                    HistoryRow(entry: entry) {
+                                        withAnimation { modelContext.delete(entry) }
                                     }
                                 }
                             }
@@ -71,25 +71,59 @@ struct HistoryView: View {
 }
 
 struct HistoryRow: View {
-    let mood: Mood, date: Date, onDelete: () -> Void
+    let entry: MoodEntry
+    let onDelete: () -> Void
+    
+    // Resolve the Mood enum from the string stored in the model
+    private var mood: Mood? {
+        Mood(rawValue: entry.moodName)
+    }
+    
     var body: some View {
-        HStack(spacing: 15) {
-            Image(systemName: mood.icon).font(.system(size: 20))
-                .foregroundStyle(mood.color).frame(width: 30)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(mood.rawValue).font(.system(size: DesignSystem.Typography.p, weight: .bold))
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 15) {
+                if let mood = mood {
+                    Image(systemName: mood.icon).font(.system(size: 20))
+                        .foregroundStyle(mood.color).frame(width: 30)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(mood.rawValue).font(.system(size: DesignSystem.Typography.p, weight: .bold))
+                            .foregroundStyle(MidnightTheme.accent)
+                        Text(entry.timestamp.formatted(date: .omitted, time: .shortened))
+                            .font(.system(size: DesignSystem.Typography.tiny))
+                            .foregroundStyle(MidnightTheme.secondaryText)
+                    }
+                }
+                
+                Spacer()
+                
+                // Display Energy Level
+                Text("⚡️ \(entry.energy)")
+                    .font(.system(size: DesignSystem.Typography.tiny, weight: .bold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(8)
                     .foregroundStyle(MidnightTheme.accent)
-                Text(date.formatted(date: .abbreviated, time: .shortened))
-                    .font(.system(size: DesignSystem.Typography.tiny))
-                    .foregroundStyle(MidnightTheme.secondaryText)
+
+                Button(action: onDelete) {
+                    Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(MidnightTheme.secondaryText.opacity(0.6))
+                        .padding(8).background(Circle().fill(Color.white.opacity(0.05)))
+                }
             }
-            Spacer()
-            Button(action: onDelete) {
-                Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(MidnightTheme.secondaryText.opacity(0.6))
-                    .padding(8).background(Circle().fill(Color.white.opacity(0.05)))
+            
+            // Display Note if available
+            if !entry.note.isEmpty {
+                Text(entry.note)
+                    .font(.system(size: DesignSystem.Typography.small))
+                    .foregroundStyle(MidnightTheme.secondaryText)
+                    .padding(.top, 4)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding().background(MidnightTheme.cardBackground).cornerRadius(DesignSystem.cornerRadius)
+        .padding()
+        .background(MidnightTheme.cardBackground)
+        .cornerRadius(16) // Adjusted from DesignSystem.cornerRadius (60) for better list appearance
     }
 }
