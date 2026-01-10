@@ -1,11 +1,5 @@
-//
-//  ProjectAlphaApp.swift
-//  ProjectAlpha
-//
-//  Created by Arthur Fondeville on 07/01/2026.
-//
-
 import SwiftUI
+import SwiftData
 
 @main
 struct ProjectAlphaApp: App {
@@ -13,5 +7,7 @@ struct ProjectAlphaApp: App {
         WindowGroup {
             ContentView()
         }
+        // This line tells the app to set up storage for our MoodEntry model
+        .modelContainer(for: MoodEntry.self)
     }
 }
