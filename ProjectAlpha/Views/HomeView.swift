@@ -44,11 +44,12 @@ struct HomeView: View {
                 
                 // ADD TOOLBAR BUTTON
                 .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
+                    ToolbarItem(placement: .topBarTrailing) {
                         Button(action: { showNewEntrySheet = true }) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundStyle(MidnightTheme.accent)
+                            Image(systemName: "plus")
+                                .font(.system(size: 16, weight: .bold))       // 1. Smaller icon to fit inside
+                                .frame(width: 32, height: 32)                 // 3. Fixed square frame (prevents squishing)
+                                .clipShape(Circle())                          // 5. Clip to circle
                         }
                     }
                 }
@@ -77,20 +78,22 @@ extension HomeView {
     
     // 2. Stats Row
     private var statsView: some View {
-        HStack(spacing: 12) {
-            Button(action: {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 0 }
-            }) {
-                StatCard(title: "Top Mood", value: topMood, subtitle: "Analysis", icon: "chart.bar.fill")
+            HStack(spacing: 12) {
+                Button(action: {
+                    // Change index from 0 to 1 for "Top Mood" (Insights)
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 1 }
+                }) {
+                    StatCard(title: "Top Mood", value: topMood, subtitle: "Analysis", icon: "chart.bar.fill")
+                }
+                Button(action: {
+                    // Keep index 2 for "Total Logs" (History)
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 2 }
+                }) {
+                    StatCard(title: "Total Logs", value: "\(entries.count)", subtitle: "History", icon: "clock.fill")
+                }
             }
-            Button(action: {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 2 }
-            }) {
-                StatCard(title: "Total Logs", value: "\(entries.count)", subtitle: "History", icon: "clock.fill")
-            }
+            .padding(.horizontal)
         }
-        .padding(.horizontal)
-    }
     
     // 4. Summary Section
     private var summaryView: some View {

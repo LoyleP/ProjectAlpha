@@ -1,9 +1,11 @@
+// In ProjectAlpha/App/ContentView.swift
+
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
     // MARK: - Properties
-    @State private var selectedTab = 1 // Default to Home (index 1)
+    @State private var selectedTab = 0 // 1. Default to Home (index 0)
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     // MARK: - Initializer for Tab Bar Styling
@@ -25,21 +27,21 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             
-            // Tab 0: Insights
-            StatsView()
-                .tabItem {
-                    Label("Insights", systemImage: "chart.bar.fill")
-                }
-                .tag(0)
-
-            // Tab 1: Home
+            // 2. Tab 0: Home (Moved to start)
             HomeView(selectedTab: $selectedTab)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
+                .tag(0)
+            
+            // 3. Tab 1: Insights (Was 0, now 1)
+            StatsView()
+                .tabItem {
+                    Label("Insights", systemImage: "chart.bar.fill")
+                }
                 .tag(1)
 
-            // Tab 2: History
+            // 4. Tab 2: History (Stays last)
             HistoryView()
                 .tabItem {
                     Label("History", systemImage: "clock.fill")
@@ -47,31 +49,8 @@ struct ContentView: View {
                 .tag(2)
         }
         .tint(MidnightTheme.accent)
-        // MARK: - Swipe Gesture Logic
-        .gesture(
-            DragGesture(minimumDistance: 50, coordinateSpace: .local)
-                .onEnded { value in
-                    let horizontalAmount = value.translation.width
-                    let verticalAmount = value.translation.height
-                    
-                    // 1. Ensure the swipe is horizontal (not vertical scrolling)
-                    if abs(horizontalAmount) > abs(verticalAmount) {
-                        
-                        // 2. Swipe Left (Next Tab)
-                        if horizontalAmount < 0 && selectedTab < 2 {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedTab += 1
-                            }
-                        }
-                        // 3. Swipe Right (Previous Tab)
-                        else if horizontalAmount > 0 && selectedTab > 0 {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedTab -= 1
-                            }
-                        }
-                    }
-                }
-        )
+        // 5. REMOVED: .gesture(DragGesture...) block
+        
         // MARK: - Onboarding Modal
         .fullScreenCover(
             isPresented: .init(

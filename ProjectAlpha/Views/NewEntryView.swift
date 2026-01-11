@@ -16,7 +16,7 @@ struct NewEntryView: View {
     @FocusState private var isNoteFocused: Bool
     
     var isValid: Bool {
-        !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        true
     }
     
     var body: some View {
@@ -60,6 +60,7 @@ struct NewEntryView: View {
                             .scrollPosition(id: $scrollID)
                             .contentMargins(.horizontal, 20, for: .scrollContent)
                             .frame(height: 220)
+                            .scrollClipDisabled()
                         }
                         
                         // SECTION 2: ENERGY & TIME (Grouped for better UX)
