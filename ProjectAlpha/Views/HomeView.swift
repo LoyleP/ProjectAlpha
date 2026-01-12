@@ -8,10 +8,8 @@ struct HomeView: View {
     @Binding var selectedTab: Int
     @State private var selectedMood: Mood?
     @State private var showDevSettings = false
-    @State private var activeScrollID: Mood? // Tracks the physical scroll position
     @State private var showNewEntrySheet = false
 
-    // MARK: - Computed Properties
     var todayMood: Mood? {
         let calendar = Calendar.current
         let latestToday = entries.first { calendar.isDateInToday($0.timestamp) }
@@ -26,9 +24,8 @@ struct HomeView: View {
         } as? String ?? "—"
     }
 
-    // MARK: - Main Body
     var body: some View {
-            NavigationStack { // Ensure everything is wrapped in NavigationStack
+            NavigationStack {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 30) {
                         headerView
@@ -40,54 +37,44 @@ struct HomeView: View {
                     }
                 }
                 .background(backgroundLayer)
-                // ... existing onAppear ...
-                
-                // ADD TOOLBAR BUTTON
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(action: { showNewEntrySheet = true }) {
                             Image(systemName: "plus")
-                                .font(.system(size: 16, weight: .bold))       // 1. Smaller icon to fit inside
-                                .frame(width: 32, height: 32)                 // 3. Fixed square frame (prevents squishing)
-                                .clipShape(Circle())                          // 5. Clip to circle
+                                .font(.body.weight(.bold))
+                                .frame(width: 32, height: 32)
+                                .clipShape(Circle())
                         }
                     }
                 }
-                // ADD SHEET MODIFIER
                 .sheet(isPresented: $showNewEntrySheet) {
                     NewEntryView()
                 }
             }
         }
-    
-    
 }
 
-// MARK: - Subviews Extension
-// Breaking the view into these parts fixes the compiler time-out error
 extension HomeView {
     
-    // 1. Header
+    // FIXED: Corrected font definition
     private var headerView: some View {
         Text("How are you\nfeeling today ?")
-            .font(.system(size: DesignSystem.Typography.h1, weight: .bold, design: .rounded))
+            .font(.system(.largeTitle, design: .rounded, weight: .bold)) // Corrected
             .foregroundStyle(MidnightTheme.accent)
             .padding(.horizontal)
             .padding(.top, 40)
     }
     
-    // 2. Stats Row
     private var statsView: some View {
             HStack(spacing: 12) {
                 Button(action: {
-                    // Change index from 0 to 1 for "Top Mood" (Insights)
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 1 }
                 }) {
                     StatCard(title: "Top Mood", value: topMood, subtitle: "Analysis", icon: "chart.bar.fill")
                 }
+                
                 Button(action: {
-                    // Keep index 2 for "Total Logs" (History)
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 2 }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 1 }
                 }) {
                     StatCard(title: "Total Logs", value: "\(entries.count)", subtitle: "History", icon: "clock.fill")
                 }
@@ -95,11 +82,10 @@ extension HomeView {
             .padding(.horizontal)
         }
     
-    // 4. Summary Section
     private var summaryView: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Summary")
-                .font(.system(size: DesignSystem.Typography.h6, weight: .bold))
+                .font(.headline.weight(.bold))
                 .foregroundStyle(MidnightTheme.secondaryText)
                 .onLongPressGesture {
                     withAnimation { showDevSettings.toggle() }
@@ -108,7 +94,7 @@ extension HomeView {
             HStack(spacing: 15) {
                 if let mood = todayMood {
                     Image(systemName: mood.icon)
-                        .font(.system(size: 18))
+                        .font(.title3)
                         .foregroundStyle(mood.color)
                         .transition(.identity)
                         .phaseAnimator([false, true]) { content, phase in
@@ -116,16 +102,16 @@ extension HomeView {
                         } animation: { _ in .easeInOut(duration: 1.5) }
 
                     Text("Today, your mood was \(Text(mood.rawValue.lowercased()).foregroundStyle(mood.color).bold())")
-                        .font(.system(size: DesignSystem.Typography.p))
+                        .font(.body)
                         .foregroundStyle(MidnightTheme.accent)
                         .transition(.identity)
                 } else {
                     Text("No mood logged yet for today.")
-                        .font(.system(size: DesignSystem.Typography.p))
+                        .font(.body)
                         .foregroundStyle(MidnightTheme.secondaryText)
                         .italic()
                         .transition(.identity)
-                        .shimmering() // Assuming you have a shimmering modifier
+                        .shimmering()
                 }
             }
             .padding(DesignSystem.padding)
@@ -141,15 +127,15 @@ extension HomeView {
         .animation(nil, value: todayMood)
     }
     
-    // 5. Developer Settings
     private var devSettingsView: some View {
         VStack(alignment: .leading, spacing: 10) {
             Rectangle().fill(Color.white.opacity(0.1)).frame(height: 1).padding(.vertical, 20)
-            Text("Developer Mode Active").font(.system(size: DesignSystem.Typography.tiny, weight: .bold))
+            Text("Developer Mode Active")
+                .font(.caption2.weight(.bold))
                 .foregroundStyle(.orange)
             Button(action: { hasSeenOnboarding = false }) {
                 Label("Restart Onboarding", systemImage: "arrow.counterclockwise.circle")
-                    .font(.system(size: DesignSystem.Typography.small))
+                    .font(.caption)
                     .foregroundStyle(MidnightTheme.accent)
                     .padding().frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.white.opacity(0.05)).cornerRadius(DesignSystem.cornerRadius)
@@ -158,7 +144,6 @@ extension HomeView {
         .padding(.horizontal).transition(.move(edge: .bottom).combined(with: .opacity))
     }
     
-    // 6. Background
     private var backgroundLayer: some View {
         ZStack {
             MidnightTheme.background.ignoresSafeArea()
@@ -173,18 +158,5 @@ extension HomeView {
             .ignoresSafeArea()
             .animation(.easeInOut(duration: 0.5), value: selectedMood)
         }
-    }
-    
-    // 7. Logic Helpers
-    private func saveMoodInternal(_ mood: Mood) {
-        let calendar = Calendar.current
-        if let existingEntry = entries.first(where: {
-            calendar.isDateInToday($0.timestamp)
-        }) {
-            existingEntry.moodName = mood.rawValue
-        } else {
-            modelContext.insert(MoodEntry(mood: mood))
-        }
-        // No forced animation or state feedback loop here
     }
 }

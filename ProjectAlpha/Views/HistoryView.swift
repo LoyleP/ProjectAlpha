@@ -16,7 +16,7 @@ struct HistoryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("History").font(.system(size: DesignSystem.Typography.h2, weight: .bold))
+                Text("Activity").font(.system(size: DesignSystem.Typography.h2, weight: .bold))
                     .foregroundStyle(MidnightTheme.accent)
                 Spacer()
                 if !entries.isEmpty {
