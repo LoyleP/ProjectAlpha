@@ -17,8 +17,8 @@ enum DesignSystem {
 }
 
 enum MidnightTheme {
-    static let background = Color(red: 0.05, green: 0.05, blue: 0.05)
-    static let cardBackground = Color(red: 0.12, green: 0.12, blue: 0.14)
+    static let background = Color(red: 0.05, green: 0.05, blue: 0.05).opacity(0.65)
+    static let cardBackground = Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.65)
     static let accent = Color.white
     static let secondaryText = Color.gray
     static let destructive = Color.red

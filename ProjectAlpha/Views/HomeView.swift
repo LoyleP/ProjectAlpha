@@ -25,62 +25,98 @@ struct HomeView: View {
     }
 
     var body: some View {
-            NavigationStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 30) {
-                        headerView
-                        statsView
-                        summaryView
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 30) {
+                    headerView
+                    
+                    // Chart Integration (Weekly/Monthly)
+                    MoodChart(entries: entries)
+                    
+                    statsView
+                    summaryView
+                    
+                    if showDevSettings { devSettingsView }
+                    Spacer(minLength: 40)
+                }
+            }
+            .background(backgroundLayer)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: { showNewEntrySheet = true }) {
+                        Image(systemName: "plus")
+                            .font(.body.weight(.bold))
+                            .frame(width: 32, height: 32)
+                    }
+                }
+            }
+            .sheet(isPresented: $showNewEntrySheet) {
+                NewEntryView()
+            }
+        }
+    }
+    
+    // MARK: - Safe Mock Data Generation
+    private func addMockData() {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Loop for the last 14 days
+        for i in 0..<14 {
+            if let date = calendar.date(byAdding: .day, value: -i, to: today) {
+                
+                // Define the time range for the specific day
+                let startOfDay = calendar.startOfDay(for: date)
+                guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { continue }
+                
+                // Check if an entry already exists for this day
+                // We use a Predicate to search SwiftData before inserting
+                let predicate = #Predicate<MoodEntry> { entry in
+                    entry.timestamp >= startOfDay && entry.timestamp < endOfDay
+                }
+                let descriptor = FetchDescriptor<MoodEntry>(predicate: predicate)
+                
+                do {
+                    let count = try modelContext.fetchCount(descriptor)
+                    
+                    // Only insert if NO entry exists (count == 0) to avoid duplicates
+                    if count == 0 {
+                        let mood = Mood.allCases.randomElement() ?? .good
+                        let energy = Int.random(in: 2...9)
                         
-                        if showDevSettings { devSettingsView }
-                        Spacer(minLength: 40)
+                        let entry = MoodEntry(mood: mood, energy: energy, note: "Mock data")
+                        entry.timestamp = date // Set specific date
+                        modelContext.insert(entry)
                     }
-                }
-                .background(backgroundLayer)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(action: { showNewEntrySheet = true }) {
-                            Image(systemName: "plus")
-                                .font(.body.weight(.bold))
-                                .frame(width: 32, height: 32)
-                                .clipShape(Circle())
-                        }
-                    }
-                }
-                .sheet(isPresented: $showNewEntrySheet) {
-                    NewEntryView()
+                } catch {
+                    print("Error checking for existing entry: \(error)")
                 }
             }
         }
+    }
 }
 
 extension HomeView {
     
-    // FIXED: Corrected font definition
     private var headerView: some View {
-        Text("How are you\nfeeling today ?")
-            .font(.system(.largeTitle, design: .rounded, weight: .bold)) // Corrected
+        Text("How are you\nfeeling today?")
+            .font(.system(.largeTitle, design: .rounded, weight: .bold))
             .foregroundStyle(MidnightTheme.accent)
             .padding(.horizontal)
             .padding(.top, 40)
     }
     
     private var statsView: some View {
-            HStack(spacing: 12) {
-                Button(action: {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 1 }
-                }) {
-                    StatCard(title: "Top Mood", value: topMood, subtitle: "Analysis", icon: "chart.bar.fill")
-                }
-                
-                Button(action: {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 1 }
-                }) {
-                    StatCard(title: "Total Logs", value: "\(entries.count)", subtitle: "History", icon: "clock.fill")
-                }
+        VStack {
+            Button(action: {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { selectedTab = 1 }
+            }) {
+                StatCard(title: "Top Mood", value: topMood, subtitle: "All Time Analysis", icon: "chart.bar.fill")
             }
-            .padding(.horizontal)
         }
+        .padding(.horizontal)
+        .glassEffect()
+    }
     
     private var summaryView: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -116,12 +152,8 @@ extension HomeView {
             }
             .padding(DesignSystem.padding)
             .frame(maxWidth: .infinity, alignment: .leading).frame(height: 52)
-            .background(MidnightTheme.cardBackground.opacity(0.65))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.white.opacity(0.05), lineWidth: 1)
-            )
+            .cornerRadius(6)
+            .glassEffect()
         }
         .padding(.horizontal)
         .animation(nil, value: todayMood)
@@ -133,8 +165,18 @@ extension HomeView {
             Text("Developer Mode Active")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(.orange)
+            
             Button(action: { hasSeenOnboarding = false }) {
                 Label("Restart Onboarding", systemImage: "arrow.counterclockwise.circle")
+                    .font(.caption)
+                    .foregroundStyle(MidnightTheme.accent)
+                    .padding().frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.white.opacity(0.05)).cornerRadius(DesignSystem.cornerRadius)
+            }
+            
+            // New Safe Mock Data Button
+            Button(action: addMockData) {
+                Label("Fill Missing Days (Last 14)", systemImage: "cylinder.split.1x2")
                     .font(.caption)
                     .foregroundStyle(MidnightTheme.accent)
                     .padding().frame(maxWidth: .infinity, alignment: .leading)
@@ -149,14 +191,18 @@ extension HomeView {
             MidnightTheme.background.ignoresSafeArea()
             LinearGradient(
                 colors: [
-                    (selectedMood?.color ?? .clear).opacity(0.25),
+                    (todayMood?.color ?? MidnightTheme.cardBackground).opacity(0.15),
                     MidnightTheme.background.opacity(0)
                 ],
-                startPoint: .top,
-                endPoint: .bottom
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            .animation(.easeInOut(duration: 0.5), value: selectedMood)
+            .animation(.easeInOut(duration: 0.5), value: todayMood)
         }
     }
+}
+
+#Preview {
+    HomeView(selectedTab: .constant(0))
 }
